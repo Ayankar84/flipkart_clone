@@ -1,8 +1,15 @@
-import { Box, Button, Dialog, TextField, Typography, styled } from "@mui/material"
+import { Alert, Box, Button, Dialog, Snackbar, TextField, Typography, styled } from "@mui/material"
 import { useRef } from "react";
 import { useState } from "react";
+import { handelLogin, handelSignup } from "../../Service/api";
 
 const LoginDialog = ({ open, setOpen }) => {
+
+    const [alrt, setAlrt] = useState({
+        status: "error",
+        open: false,
+        message: "Done"
+    })
 
     const [account, setAccount] = useState(
         {
@@ -17,6 +24,13 @@ const LoginDialog = ({ open, setOpen }) => {
             email: "",
             password: "",
             mobile: ""
+        }
+    )
+
+    const login = useRef(
+        {
+            username: "",
+            password: ""
         }
     )
 
@@ -87,7 +101,43 @@ const LoginDialog = ({ open, setOpen }) => {
 
 
     const handelSignupData = (e) => {
-        signup.current[e.target.name]= e.target.value;
+        signup.current[e.target.name] = e.target.value;
+    }
+    const handelLoginData = (e) => {
+        login.current[e.target.name] = e.target.value;
+    }
+    
+    const loginUser = async()=>{
+        try{
+            const {token} = await handelLogin(login.current)
+            console.log(token)
+        }catch(e){
+            console.log(e.message);
+        }
+    }
+
+    const signupUser = async () => {
+        try {
+            const resData = await handelSignup(signup.current);
+            const {data, error} = resData;
+            if(data){
+                setAccount({ ...account, view: "login" });
+                setAlrt({
+                    status: "success",
+                    open: true,
+                    message: data
+            })
+            }else{
+                setAlrt({
+                    status: "error",
+                    open: true,
+                    message: error
+            })
+            }
+            console.log(resData);
+        } catch (e) {
+            console.log("error: ", e.message)
+        }
     }
 
     return (
@@ -96,6 +146,19 @@ const LoginDialog = ({ open, setOpen }) => {
             setAccount({ view: "login" })
         }} PaperProps={{ sx: { maxWidth: "unset" } }}>
             <Component>
+
+          {/* This is alert part */}
+                <Snackbar
+                    open={alrt.open}
+                    anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                    onClose={()=>{setAlrt({...alrt, open:false})}}
+                >
+                    <Alert variant="filled" severity={alrt.status} >
+                        {alrt.message}
+                    </Alert>
+                </Snackbar>
+          {/* This is alert part */}
+
                 <ComponentBox>
                     <Image>
                         <Typography variant="h5">{account.view === "login" ? "Login" : "Looks like you're new here!"}</Typography>
@@ -103,22 +166,22 @@ const LoginDialog = ({ open, setOpen }) => {
                     </Image>
                     {account.view === "login" ?
                         <Wrapper>
-                            <TextField variant="standard" label="Enter Email" />
-                            <TextField variant="standard" label="Enter Password" />
+                            <TextField name="username" variant="standard" label="Enter Username" onChange={(e)=>{handelLoginData(e)}}/>
+                            <TextField type="password" name="password" variant="standard" label="Enter Password" onChange={(e)=>{handelLoginData(e)}}/>
                             <Text>By continuing, you agree to Flipkart's Terms of Use and Privacy Policy.</Text>
-                            <LoginButton>Login</LoginButton>
+                            <LoginButton onClick={loginUser}>Login</LoginButton>
                             <Typography style={{ "textAlign": "center" }}>OR</Typography>
                             <OtpButton>Request OTP</OtpButton>
                             <CreateAccount onClick={() => { setAccount({ ...account, view: "signup" }) }}>New to Flipkart? Create an account</CreateAccount>
                         </Wrapper>
                         :
                         <Wrapper style={{ "padding": "0 35px" }}>
-                            <TextField variant="standard"  onChange={(e) => { handelSignupData(e) }} name="name" label="Enter Fullname" />
-                            <TextField variant="standard"  onChange={(e) => { handelSignupData(e) }} name="username" label="Enter Username" />
-                            <TextField variant="standard"  onChange={(e) => { handelSignupData(e) }} name="email" label="Enter Email" />
-                            <TextField variant="standard"  onChange={(e) => { handelSignupData(e) }} name="password" label="Enter Password" />
-                            <TextField variant="standard"  onChange={(e) => { handelSignupData(e) }} name="mobile" label="Enter mobile" />
-                            <LoginButton onClick={() => { console.log(signup.current) }} >Continue</LoginButton>
+                            <TextField variant="standard" onChange={(e) => { handelSignupData(e) }} name="name" label="Enter Fullname" />
+                            <TextField variant="standard" onChange={(e) => { handelSignupData(e) }} name="username" label="Enter Username" />
+                            <TextField type="email" variant="standard" onChange={(e) => { handelSignupData(e) }} name="email" label="Enter Email" />
+                            <TextField type="password" variant="standard" onChange={(e) => { handelSignupData(e) }} name="password" label="Enter Password" />
+                            <TextField type="number" variant="standard" onChange={(e) => { handelSignupData(e) }} name="mobile" label="Enter mobile" />
+                            <LoginButton onClick={signupUser} >Continue</LoginButton>
                             <CreateAccount onClick={() => { setAccount({ ...account, view: "login" }) }}>Existing User? Log in</CreateAccount>
                         </Wrapper>
                     }
